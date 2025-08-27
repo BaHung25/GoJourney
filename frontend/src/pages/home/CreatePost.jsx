@@ -179,6 +179,8 @@ const CreatePost = ({ isOpen, onClose, vacationId, onPostCreated }) => {
     }
   };
 
+  const showUploadArea = false;
+
   // If not open and no vacationId, render standalone version
   if (!isOpen && !vacationId) {
     return (
@@ -230,8 +232,8 @@ const CreatePost = ({ isOpen, onClose, vacationId, onPostCreated }) => {
             </div>
           )}
 
-          {/* Image Upload Area */}
-          {images.length < 10 && (
+          {/* Image Upload Area (hidden as requested) */}
+          {showUploadArea && images.length < 10 && (
             <div
               className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 cursor-pointer ${
                 isDragOver 
@@ -375,8 +377,8 @@ const CreatePost = ({ isOpen, onClose, vacationId, onPostCreated }) => {
               </div>
             )}
 
-            {/* Image Upload Area */}
-            {images.length < 10 && (
+            {/* Image Upload Area (hidden as requested) */}
+            {showUploadArea && images.length < 10 && (
               <div
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer ${
                   isDragOver 

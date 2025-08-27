@@ -1,6 +1,7 @@
 import User from '../models/user.model.js';
 import Post from '../models/post.model.js';
 import PostVacation from '../models/postVacation.model.js';
+import Vacation from '../models/vacation.model.js';
 import Notification from '../models/notification.model.js';
 import cloudinary from 'cloudinary';
 
@@ -233,6 +234,48 @@ const getFollowingPosts = async (req, res) => {
   }
 };
 
+// Lấy các bài viết thuộc các kỳ nghỉ mà người dùng có thể xem
+const getVacationFeed = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Chỉ lấy các kỳ nghỉ mà user là creator hoặc participant (không gồm invited/public)
+    const accessibleVacations = await Vacation.find({
+      $or: [
+        { creator: userId },
+        { participants: userId },
+      ],
+    }).select('_id');
+
+    const vacationIds = accessibleVacations.map((v) => v._id);
+
+    if (vacationIds.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Lấy các PostVacation liên quan và populate Post kèm user, comments.user
+    const postVacations = await PostVacation.find({ vacation: { $in: vacationIds } })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: 'post',
+        populate: [
+          { path: 'user', select: '-password' },
+          { path: 'comments.user', select: '-password' },
+        ],
+      });
+
+    // Chỉ trả về các post hợp lệ
+    const posts = postVacations
+      .map((pv) => pv.post)
+      .filter((p) => p && p._id);
+
+    return res.status(200).json(posts);
+  } catch (error) {
+    console.log('Error in getVacationFeed controller ', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 const getUserPosts = async (req, res) => {
   try {
     const username = req.params.username;
@@ -268,4 +311,5 @@ export {
   getLikedPosts,
   getFollowingPosts,
   getUserPosts,
+  getVacationFeed,
 };

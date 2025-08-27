@@ -28,6 +28,28 @@ const SearchPage = () => {
     enabled: !!query.trim(),
   });
 
+  const {
+    data: vacations = [],
+    isLoading: isLoadingVacations,
+    error: errorVacations,
+  } = useQuery({
+    queryKey: ['searchVacations', query],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/search/vacations?search_query=${query}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Something went wrong!');
+        }
+        return data;
+      } catch (error) {
+        throw new Error(error.message || 'Failed to fetch vacations');
+      }
+    },
+    enabled: !!query.trim(),
+  });
+
   const handleSearchChange = (e) => {
     setQuery(e.target.value);
   };
@@ -67,7 +89,8 @@ const SearchPage = () => {
           </p>
         </div>
 
-        {/* Search Results Container */}
+        {/* Search Results Container */
+        }
         {query.trim() && (
           <div className='bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden'>
             {/* Loading State */}
@@ -213,6 +236,55 @@ const SearchPage = () => {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Vacations Results */}
+            {!isLoadingVacations && !errorVacations && vacations.length > 0 && (
+              <div className='border-t border-gray-100'>
+                <div className='px-6 py-4 bg-gray-50 border-b border-gray-100'>
+                  <p className='text-sm font-semibold text-gray-700'>
+                    Found {vacations.length} vacation{vacations.length !== 1 ? 's' : ''} matching "{query}"
+                  </p>
+                </div>
+
+                <div className='max-h-96 overflow-y-auto divide-y divide-gray-100'>
+                  {vacations.map((vacation) => (
+                    <Link
+                      key={vacation._id}
+                      to={`/vacations/${vacation._id}`}
+                      className='block group hover:bg-gray-50 transition-all duration-300'
+                    >
+                      <div className='p-4 flex items-center gap-4'>
+                        <div className='w-20 h-14 rounded-xl overflow-hidden ring-4 ring-gray-100 shadow-lg group-hover:ring-purple-200 group-hover:shadow-xl transition-all duration-300'>
+                          <img
+                            src={(vacation.images && vacation.images[0]) || '/cover-placeholder.png'}
+                            alt={vacation.name}
+                            className='w-full h-full object-cover'
+                          />
+                        </div>
+                        <div className='flex-1 min-w-0'>
+                          <h3 className='font-bold text-gray-800 group-hover:text-purple-600 transition-colors duration-300 truncate'>
+                            {vacation.name}
+                          </h3>
+                          <p className='text-sm text-gray-500 truncate'>
+                            {vacation.location}
+                          </p>
+                          {vacation.creator && (
+                            <p className='text-xs text-gray-400 mt-1 truncate'>
+                              by {vacation.creator.fullName || vacation.creator.username}
+                            </p>
+                          )}
+                        </div>
+                        <div className='text-gray-400 group-hover:text-purple-500 group-hover:translate-x-1 transition-all duration-300'>
+                          <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5l7 7-7 7' />
+                          </svg>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>

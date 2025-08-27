@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Image as ImageIcon } from 'lucide-react';
 import PostCard from '../common/PostCard';
 import LoadingSpinner from '../common/LoadingSpinner';
+import ImageModal from '../common/ImageModal';
 
 const VacationPosts = ({ 
   posts = [], 
@@ -24,6 +25,25 @@ const VacationPosts = ({
   });
 
   console.log('Valid posts after filtering:', validPosts.length);
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+  const handleOpenGallery = (images, startIndex = 0) => {
+    if (!images || images.length === 0) return;
+    setSelectedImage({
+      url: images[startIndex],
+      alt: `Image ${startIndex + 1} / ${images.length}`,
+      images,
+      index: startIndex,
+    });
+    setIsImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    setSelectedImage(null);
+  };
 
   return (
     <div className="bg-white rounded-lg border p-4">
@@ -52,9 +72,21 @@ const VacationPosts = ({
       ) : (
         <div className="space-y-4">
           {validPosts.map((post) => (
-            <PostCard key={post._id} post={post} />
+            <PostCard 
+              key={post._id} 
+              post={post} 
+              onOpenGallery={handleOpenGallery}
+            />
           ))}
         </div>
+      )}
+
+      {isImageModalOpen && selectedImage && (
+        <ImageModal
+          image={selectedImage}
+          isOpen={isImageModalOpen}
+          onClose={closeImageModal}
+        />
       )}
     </div>
   );

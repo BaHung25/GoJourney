@@ -10,9 +10,9 @@ const generateTokenAndSetCookie = (userId, res) => {
 
   res.cookie('token', token, {
     maxAge: 864000000, // 10 days
-    httpOnly: true, // Prevents access to the cookie via JavaScript, helping protect against XSS attacks.
-    sameSite: 'strict', // Prevents the cookie from being sent with cross-site requests
-    secure: process.env.NODE_ENV !== 'development', // Only allow cookies on HTTPS in production
+    httpOnly: true, 
+    sameSite: 'strict', 
+    secure: process.env.NODE_ENV !== 'development', 
   });
 };
 

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 
-const PostCard = ({ post, onImageClick }) => {
+const PostCard = ({ post, onImageClick, onOpenGallery }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [comment, setComment] = useState('');
   const [showComments, setShowComments] = useState(false);
@@ -24,7 +24,9 @@ const PostCard = ({ post, onImageClick }) => {
   const postOwner = post.user;
   const isMyPost = authUser?._id === post.user._id;
   const formattedDate = formatDate(post.createdAt);
-  const isLiked = post.likes.includes(authUser?._id);
+  const postLikes = Array.isArray(post.likes) ? post.likes : [];
+  const postComments = Array.isArray(post.comments) ? post.comments : [];
+  const isLiked = postLikes.includes(authUser?._id);
 
   // Handle multiple images - support both old single image and new multiple images
   const postImages = post.images || (post.img ? [post.img] : []);
@@ -34,6 +36,7 @@ const PostCard = ({ post, onImageClick }) => {
       try {
         const res = await fetch(`/api/posts/${post._id}`, {
           method: 'DELETE',
+          credentials: 'include',
         });
         const data = await res.json();
         if (!res.ok) {
@@ -59,6 +62,7 @@ const PostCard = ({ post, onImageClick }) => {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
         });
         const data = await res.json();
         if (!res.ok) {
@@ -70,15 +74,12 @@ const PostCard = ({ post, onImageClick }) => {
       }
     },
     onSuccess: (updatedLikes) => {
-      queryClient.setQueryData(['posts'], (oldPosts) => {
-        return oldPosts.map((p) => {
-          if (p._id === post._id) {
-            return { ...p, likes: updatedLikes };
-          }
-
-          return p;
-        });
+      const safeUpdatedLikes = Array.isArray(updatedLikes) ? updatedLikes : [];
+      queryClient.setQueriesData({ queryKey: ['posts'] }, (oldPosts) => {
+        if (!Array.isArray(oldPosts)) return oldPosts;
+        return oldPosts.map((p) => (p._id === post._id ? { ...p, likes: safeUpdatedLikes } : p));
       });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
     onError: (error) => {
       toast.error(error.message);
@@ -93,6 +94,7 @@ const PostCard = ({ post, onImageClick }) => {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify({ text: comment }),
         });
 
@@ -107,14 +109,12 @@ const PostCard = ({ post, onImageClick }) => {
       }
     },
     onSuccess: (updatedComments) => {
-      queryClient.setQueryData(['posts'], (oldPosts) => {
-        return oldPosts.map((p) => {
-          if (p._id === post._id) {
-            return { ...p, comments: updatedComments };
-          }
-          return p;
-        });
+      const safeUpdatedComments = Array.isArray(updatedComments) ? updatedComments : [];
+      queryClient.setQueriesData({ queryKey: ['posts'] }, (oldPosts) => {
+        if (!Array.isArray(oldPosts)) return oldPosts;
+        return oldPosts.map((p) => (p._id === post._id ? { ...p, comments: safeUpdatedComments } : p));
       });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
       setComment('');
     },
 
@@ -156,7 +156,7 @@ const PostCard = ({ post, onImageClick }) => {
             src={postImages[0]}
             alt="Post"
             className="w-full rounded-xl border border-base-300 object-contain max-h-96 cursor-pointer hover:opacity-95 transition-opacity"
-            onClick={() => handleImageClick(postImages[0], 'Post image')}
+            onClick={() => onOpenGallery ? onOpenGallery(postImages, 0) : handleImageClick(postImages[0], 'Post image')}
           />
         </div>
       );
@@ -171,7 +171,7 @@ const PostCard = ({ post, onImageClick }) => {
               src={img}
               alt={`Post image ${index + 1}`}
               className="w-full h-48 rounded-xl border border-base-300 object-cover cursor-pointer hover:opacity-95 transition-opacity"
-              onClick={() => handleImageClick(img, `Post image ${index + 1}`)}
+              onClick={() => onOpenGallery ? onOpenGallery(postImages, index) : handleImageClick(img, `Post image ${index + 1}`)}
             />
           ))}
         </div>
@@ -187,7 +187,7 @@ const PostCard = ({ post, onImageClick }) => {
               src={img}
               alt={`Post image ${index + 1}`}
               className="w-full h-32 rounded-xl border border-base-300 object-cover cursor-pointer hover:opacity-95 transition-opacity"
-              onClick={() => handleImageClick(img, `Post image ${index + 1}`)}
+              onClick={() => onOpenGallery ? onOpenGallery(postImages, index) : handleImageClick(img, `Post image ${index + 1}`)}
             />
           ))}
         </div>
@@ -205,7 +205,7 @@ const PostCard = ({ post, onImageClick }) => {
               className={`w-full h-32 rounded-xl border border-base-300 object-cover cursor-pointer hover:opacity-95 transition-opacity ${
                 index === 3 ? 'brightness-75' : ''
               }`}
-              onClick={() => handleImageClick(img, `Post image ${index + 1}`)}
+              onClick={() => onOpenGallery ? onOpenGallery(postImages, index) : handleImageClick(img, `Post image ${index + 1}`)}
             />
             {index === 3 && postImages.length > 4 && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
@@ -314,7 +314,7 @@ const PostCard = ({ post, onImageClick }) => {
                       : 'text-muted-foreground group-hover:text-red-500'
                   }`}
                 >
-                  {post.likes.length}
+                  {postLikes.length}
                 </span>
               </div>
 
@@ -326,7 +326,7 @@ const PostCard = ({ post, onImageClick }) => {
                 onClick={() => setShowComments(!showComments)}
               >
                 <MessageCircle size={18} />
-                <span>{post.comments.length}</span>
+                <span>{postComments.length}</span>
               </div>
             </div>
             <Bookmark
@@ -343,9 +343,9 @@ const PostCard = ({ post, onImageClick }) => {
           >
             <div className='flex flex-col gap-4 text-sm text-base-content'>
               {/* Comments */}
-              {post.comments.length > 0 ? (
+              {postComments.length > 0 ? (
                 <div className='flex flex-col gap-0 max-h-64 overflow-y-auto pr-2 mb-4'>
-                  {post.comments.map((comment) => (
+                  {postComments.map((comment) => (
                     <div
                       key={comment._id}
                       className='flex items-start gap-4 bg-base-100 p-4'

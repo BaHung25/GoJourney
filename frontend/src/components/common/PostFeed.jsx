@@ -14,6 +14,8 @@ const PostFeed = ({ feedType, username, userId }) => {
         return '/api/posts/all';
       case 'following':
         return '/api/posts/following';
+      case 'vacations':
+        return '/api/posts/vacations';
       case 'posts':
         return `/api/posts/user/${username}`;
       case 'likes':
@@ -31,10 +33,10 @@ const PostFeed = ({ feedType, username, userId }) => {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ['posts'],
+    queryKey: ['posts', feedType, username, userId],
     queryFn: async () => {
       try {
-        const res = await fetch(POST_ENDPOINT);
+        const res = await fetch(POST_ENDPOINT, { credentials: 'include' });
         const data = await res.json();
 
         if (!res.ok) {
@@ -49,10 +51,21 @@ const PostFeed = ({ feedType, username, userId }) => {
 
   useEffect(() => {
     refetch();
-  }, [feedType, refetch]);
+  }, [POST_ENDPOINT, feedType, username, userId, refetch]);
 
   const handleImageClick = (imageUrl, imageAlt = 'Post image') => {
     setSelectedImage({ url: imageUrl, alt: imageAlt });
+    setIsImageModalOpen(true);
+  };
+
+  const handleOpenGallery = (images, startIndex = 0) => {
+    if (!images || images.length === 0) return;
+    setSelectedImage({
+      url: images[startIndex],
+      alt: `Image ${startIndex + 1} / ${images.length}`,
+      images,
+      index: startIndex,
+    });
     setIsImageModalOpen(true);
   };
 
@@ -87,6 +100,7 @@ const PostFeed = ({ feedType, username, userId }) => {
           <PostCard
             post={post}
             onImageClick={handleImageClick}
+            onOpenGallery={handleOpenGallery}
           />
         </div>
       ))}

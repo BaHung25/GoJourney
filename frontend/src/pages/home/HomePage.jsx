@@ -32,6 +32,16 @@ const HomePage = () => {
         >
           Following
         </button>
+        <button
+          className={`px-6 py-2 text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm ${
+            feedType === 'vacations'
+              ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-md scale-105'
+              : 'bg-white/70 hover:bg-emerald-50 border border-emerald-200 text-emerald-700'
+          }`}
+          onClick={() => setFeedType('vacations')}
+        >
+          Vacations
+        </button>
       </div>
     </div>
   </div>

@@ -379,7 +379,7 @@ const CreateVacationModal = ({ isOpen, onClose, onSuccess }) => {
                 value={formData.name}
                 onChange={handleInputChange}
                 onBlur={handleBlur}
-                placeholder="Ví dụ: Du lịch Đà Nẵng 2024"
+                placeholder="Ví dụ: Du lịch Đà Nẵng 2025"
                 className={`input input-bordered w-full pr-10 transition-all duration-200 ${
                   touched.name && errors.name ? 'input-error' : 'focus:input-primary'
                 }`}
